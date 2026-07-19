@@ -538,3 +538,37 @@ atomically with content; initial-HTML titles unchanged (`/register` and
 `/app` still carry `<title>` in `<head>`); e2e suite 8/8 (Chromium, local);
 full suite 123/123; lint, typecheck, format:check, verify:clean all passing.
 The three-browser confirmation is CI run #2, triggered by this commit.
+
+---
+
+## D-0023 · 2026-07-19 · Definition of Done: the final two outstanding items are closed (amends D-0021)
+
+This log is append-only, so D-0021 is amended here rather than edited in
+place.
+
+**Criterion #11 ("Modern browsers function correctly") — now fully Met.**
+D-0021 recorded it as "Met with note" because Firefox and WebKit could not be
+installed in the build environment. The evidence now exists: GitHub Actions
+run 29691352508 (head of `main`, commit `eafa73a`) completed with the `e2e`
+job green — the full Playwright journey suite plus the WCAG 2.2 AA axe audit
+executed across **Chromium, Firefox, and WebKit** (sibling run 29691349205 on
+the fix commit alone also green; job times: verify 76s, e2e 168s, docker
+74s). The same runs retire the environment note on criterion #10: the
+accessibility audit is now three-browser evidence, not Chromium-only. The
+path to this evidence — including the honest first-run failure — is D-0022.
+
+**Outstanding item "first CI run" — closed** by the runs above (D-0022
+records run #1's diagnosis and fix; runs #2/#3 are fully green).
+
+**Outstanding item "cloud deploy" — closed.** The repository owner executed
+the deploy on Fly.io from this repository's `fly.toml` and `Dockerfile`, per
+DEPLOYMENT.md, and reports the app live and healthy (owner report in the
+build thread, 2026-07-19). Consistent with D-0021's boundary statement, the
+deploy ran outside this environment with the owner's credentials, so this
+entry records it as owner-executed and owner-verified rather than verified
+here; the `/api/healthz` contract makes it independently checkable at any
+time.
+
+**Result.** All 15 Definition of Done criteria are Met with no notes and no
+outstanding items. The product is built, verified, published, CI-green on
+`main` across the full browser matrix, and deployed.
