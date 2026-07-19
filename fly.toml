@@ -1,0 +1,38 @@
+# Fly.io configuration for TrueTailor.
+# First deploy:
+#   fly launch --no-deploy --copy-config
+#   fly volumes create truetailor_data --size 1
+#   fly secrets set ANTHROPIC_API_KEY=...   # or GEMINI_API_KEY / OPENAI_API_KEY
+#   fly deploy
+# Set APP_URL below to your real hostname before deploying.
+
+app = "truetailor"
+primary_region = "iad"
+
+[env]
+  APP_URL = "https://truetailor.fly.dev"
+  AI_PROVIDER = "anthropic"
+  DATABASE_PATH = "/data/app.db"
+
+[mounts]
+  source = "truetailor_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  # SQLite on a volume implies exactly one machine (see DECISIONS.md D-0004).
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/api/healthz"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
