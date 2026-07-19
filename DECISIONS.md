@@ -495,3 +495,46 @@ executing the actual cloud deploy (D-0007) and the first CI run, both of
 which require the user's hosting/GitHub accounts. All artifacts for both are
 in the repository and verified to the boundary of what this environment can
 execute.
+
+---
+
+## D-0022 · 2026-07-19 · First CI run: cross-browser axe failure fixed by making metadata delivery atomic
+
+**Context.** The repository was published to GitHub
+(Abdeldjalildrissi/TrueTailor) and the workflow file committed to `main`
+(commit 721181c), firing the first real CI run (#29690757061). Results:
+`verify` succeeded (lint, typecheck, format, 123 tests, deferred-work scan,
+production build), `docker` succeeded (image build), `e2e` failed — the same
+test in all three browsers: `register page passes the WCAG audit and signup
+works end to end`, at the second axe scan (journey.spec.ts:70), with an axe
+`document-title` violation (WCAG 2.4.2 tag set). Nine earlier scans passed.
+
+**Diagnosis.** The failing scan is the first **client-side navigation** of
+the suite (post-signup transition to `/app`). Full page loads were provably
+fine: the production server's initial HTML carries `<title>` inside `<head>`
+for `/register` (byte 1087) and `/app` (byte 1203) — measured locally against
+the identical build. But Next.js 15 streams metadata for dynamic pages: on a
+client navigation the new page's body commits before its metadata chunk
+arrives, so there is a window in which the old title is gone and the new one
+has not mounted. Fast machines close the window before axe injects; the
+two-core CI runners did not — deterministically, in Chromium, Firefox, and
+WebKit alike. This is a real (if brief) WCAG 2.4.2 defect for assistive
+technology during client navigations, not a flaky test.
+
+**Decision.** Deliver metadata atomically with content for every user agent
+by setting `htmlLimitedBots: /.*/` in next.config.ts — the supported opt-out
+of streamed metadata in Next 15.5 (a `streamingMetadata` experimental flag
+does not exist in this version; the first attempt with it failed the build
+and was discarded). All metadata in this app is static, so blocking delivery
+costs nothing measurable. The alternative — waiting for `document.title` in
+the test before scanning — was rejected: it would mask the defect instead of
+fixing it.
+
+**Verified.** After the change: production build clean (no config warnings);
+the RSC navigation payload for `/app` now contains the fully materialized
+title element (`["$","title","0",{"children":"Workspace · TrueTailor"}]`)
+with every lazy row resolved in the same response, so title swaps commit
+atomically with content; initial-HTML titles unchanged (`/register` and
+`/app` still carry `<title>` in `<head>`); e2e suite 8/8 (Chromium, local);
+full suite 123/123; lint, typecheck, format:check, verify:clean all passing.
+The three-browser confirmation is CI run #2, triggered by this commit.
