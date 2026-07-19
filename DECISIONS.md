@@ -572,3 +572,47 @@ time.
 **Result.** All 15 Definition of Done criteria are Met with no notes and no
 outstanding items. The product is built, verified, published, CI-green on
 `main` across the full browser matrix, and deployed.
+
+---
+
+## D-0024 · 2026-07-19 · First-run 500: blank `AI_MODEL=` in the shipped env rejected by validation
+
+**Symptom.** On a fresh local setup (`cp .env.example .env` per the README,
+then `npm run dev`), the very first account registration returned HTTP 500.
+The server log showed a ZodError from `env()` (src/lib/env.ts) —
+`AI_MODEL: String must contain at least 1 character(s)` — raised via
+`getDb()` on the register path.
+
+**Root cause.** `AI_MODEL` was declared `z.string().min(1).optional()`.
+`.optional()` admits only an *absent* variable (undefined); but `.env` files
+and shells express "no value" as an empty assignment (`AI_MODEL=`), which
+arrives as `""` — present-but-empty. `.min(1)` then rejects it. Because the
+shipped `.env.example` contained a bare `AI_MODEL=` line, **every** install
+following the README hit this on first request. `AI_MODEL` is the only
+optional variable with a length floor, so it was the only one affected (the
+provider keys are `.optional()` with no `.min`, so their empty form validates
+and is treated downstream as "not configured").
+
+**Why tests were green.** The unit/integration setup and the Playwright
+webServer set provider keys explicitly but never define `AI_MODEL`, so it was
+always *absent* (the case `.optional()` handles) — never *present-but-empty*
+(the case that fails). No test exercised the shipped `.env.example` contract.
+
+**Fix.**
+1. `AI_MODEL` now preprocesses blank/whitespace to `undefined` before the
+   `.string().min(1).optional()` check, so an empty assignment means "use the
+   built-in per-provider default model" — which is exactly how AI_MODEL was
+   always intended to behave (providers take it as a defaulted argument).
+2. `.env.example` comments the line out (`# AI_MODEL=`) with a note that
+   leaving it unset uses the provider default.
+3. New `tests/unit/env.test.ts` adds two guards: the empty-string case
+   resolves to undefined (and a real override still applies), and a contract
+   test parses the actual `.env.example` and asserts `env()` accepts it —
+   this second test fails against the pre-fix code, closing the gap that let
+   the bug ship.
+
+**Verified.** New tests fail red against the reverted fix (2/3), pass green
+with it (3/3); full suite 126/126 across 20 files; lint, typecheck,
+`prettier --check .`, and the deferred-work scan all pass. Existing `.env`
+files with a blank `AI_MODEL=` now work without edits; fresh copies work out
+of the box.
