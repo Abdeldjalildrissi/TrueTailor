@@ -584,7 +584,7 @@ The server log showed a ZodError from `env()` (src/lib/env.ts) —
 `getDb()` on the register path.
 
 **Root cause.** `AI_MODEL` was declared `z.string().min(1).optional()`.
-`.optional()` admits only an *absent* variable (undefined); but `.env` files
+`.optional()` admits only an _absent_ variable (undefined); but `.env` files
 and shells express "no value" as an empty assignment (`AI_MODEL=`), which
 arrives as `""` — present-but-empty. `.min(1)` then rejects it. Because the
 shipped `.env.example` contained a bare `AI_MODEL=` line, **every** install
@@ -595,10 +595,11 @@ and is treated downstream as "not configured").
 
 **Why tests were green.** The unit/integration setup and the Playwright
 webServer set provider keys explicitly but never define `AI_MODEL`, so it was
-always *absent* (the case `.optional()` handles) — never *present-but-empty*
+always _absent_ (the case `.optional()` handles) — never _present-but-empty_
 (the case that fails). No test exercised the shipped `.env.example` contract.
 
 **Fix.**
+
 1. `AI_MODEL` now preprocesses blank/whitespace to `undefined` before the
    `.string().min(1).optional()` check, so an empty assignment means "use the
    built-in per-provider default model" — which is exactly how AI_MODEL was
