@@ -1,0 +1,58 @@
+{
+  "name": "truetailor",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Grounded resume tailoring platform: every generated line traces to verified profile facts.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "db:generate": "drizzle-kit generate",
+    "verify:clean": "node scripts/verify-clean.mjs",
+    "verify": "npm run lint && npm run typecheck && npm run format:check && npm run test:run && npm run verify:clean && npm run build",
+    "test:e2e": "playwright test --project=chromium",
+    "test:e2e:all": "playwright test"
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "^5.2.5",
+    "@libsql/client": "^0.15.9",
+    "@node-rs/argon2": "^2.0.2",
+    "docx": "^9.7.1",
+    "drizzle-orm": "^0.44.2",
+    "mammoth": "^1.12.0",
+    "nanoid": "^5.1.5",
+    "next": "15.5.20",
+    "pdf-lib": "^1.17.1",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "unpdf": "^1.6.2",
+    "zod": "^3.25.67",
+    "zod-to-json-schema": "^3.25.2"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
+    "@playwright/test": "^1.61.1",
+    "@tailwindcss/postcss": "^4.1.10",
+    "@types/node": "^24.0.3",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "drizzle-kit": "^0.31.1",
+    "eslint": "^9.29.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "postcss": "^8.5.5",
+    "prettier": "^3.5.3",
+    "tailwindcss": "^4.1.10",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.34.1",
+    "vitest": "^3.2.4"
+  }
+}
