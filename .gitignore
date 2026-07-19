@@ -1,0 +1,29 @@
+# dependencies
+node_modules/
+
+# next.js build output
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# runtime data (SQLite lives on a mounted volume in production)
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# environment files — secrets never enter source control
+.env
+.env.*
+!.env.example
+
+# test artifacts
+coverage/
+playwright-report/
+test-results/
+
+# misc
+.DS_Store
+npm-debug.log*
