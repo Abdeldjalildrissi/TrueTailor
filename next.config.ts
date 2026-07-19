@@ -14,6 +14,14 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   output: "standalone",
   serverExternalPackages: ["@libsql/client", "@node-rs/argon2"],
+  // Deliver metadata atomically with page content for every user agent
+  // instead of in a deferred stream. With streamed metadata, a client-side
+  // navigation commits the new page body before its <title> arrives, leaving
+  // a window where the document has no title — a WCAG 2.4.2 failure that axe
+  // caught on slower CI runners (all three browsers, first client navigation
+  // of the e2e journey). All metadata in this app is static, so blocking
+  // delivery costs nothing. See DECISIONS.md D-0022.
+  htmlLimitedBots: /.*/,
   async headers() {
     return [
       {
