@@ -151,6 +151,7 @@ Operational notes:
   against the production build, session hygiene, deployment docs + fly.toml,
   and the full Definition of Done audit (DECISIONS.md D-0021).
 
-All five build phases are complete. The one remaining credential-gated step
-is executing a cloud deploy with your hosting account (everything for it is
-in this repository — see DEPLOYMENT.md).
+All five build phases are complete, CI runs green on `main` — including the
+Playwright + WCAG 2.2 AA audit across Chromium, Firefox, and WebKit — and
+the first production deployment is live on Fly.io (see DEPLOYMENT.md and
+DECISIONS.md D-0022/D-0023). All 15 Definition of Done criteria are met.
