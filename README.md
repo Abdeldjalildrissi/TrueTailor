@@ -70,6 +70,41 @@ Environment variables (see `.env.example`):
 The database schema is created automatically on first run (migrations in
 `drizzle/` are applied at connection time).
 
+## How to use
+
+1. **Create an account.** Register with an email and password, then sign
+   in. Everything you import or generate is private to your account.
+2. **Import your resume.** Upload a PDF, DOCX, Markdown, or plain-text
+   resume — or paste the text. The AI extracts it into a structured
+   profile in which every job, bullet, skill, degree, and certification
+   has a stable ID. Anything that cannot be grounded verbatim in your
+   document is excluded and listed in a visible warning, never silently
+   invented.
+3. **Review your profile.** The profile editor shows exactly what the
+   system believes about you. Fix dates, add skills, refine bullets — this
+   structured profile, not the original file, is the single source of
+   truth for everything generated later.
+4. **Tailor to a job.** Paste a job posting. TrueTailor analyzes its
+   requirements (kept as verbatim quotes from the posting), scores how
+   well your profile covers them, and generates a tailored resume —
+   optionally with a cover letter. Requirements your profile cannot
+   support appear as explicit gaps; they are never papered over.
+5. **Review line by line.** Every generated line cites the profile entries
+   that support it, side by side with its sources. Accept it, reject it,
+   or rewrite it — rewrites take your authorship. Any line that fails the
+   deterministic verifier arrives blocked and cannot leave the app as
+   generated content.
+6. **Export.** Download the reviewed resume as Markdown, DOCX, or PDF. The
+   export gate re-verifies every line; only accepted, verified, or
+   user-authored content is written to the file.
+7. **It learns your voice.** Your rewrites and rejections deterministically
+   shape future generations — style and selection only. The verification
+   rules never relax.
+
+Import extraction and tailoring require an AI provider key (`AI_PROVIDER`
+plus the matching key, above). Without one, those actions return a clear
+configuration error instead of degrading.
+
 ## Scripts
 
 | Command                | What it does                                     |
