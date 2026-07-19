@@ -5,7 +5,15 @@ const schema = z.object({
   APP_URL: z.string().url().default("http://localhost:3000"),
   DATABASE_PATH: z.string().min(1).default("./data/app.db"),
   AI_PROVIDER: z.enum(["anthropic", "openai", "google"]).default("anthropic"),
-  AI_MODEL: z.string().min(1).optional(),
+  // `.env` files and shells express "no value" as an empty assignment
+  // (`AI_MODEL=`), which arrives as "" — present-but-empty, so a bare
+  // `.optional()` does not cover it and `.min(1)` then rejects it. Since this
+  // is the only optional variable with a length floor, treat a blank/whitespace
+  // value as unset so the documented default model applies. See D-0024.
+  AI_MODEL: z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z.string().min(1).optional()
+  ),
   ANTHROPIC_API_KEY: z.string().optional(),
   OPENAI_API_KEY: z.string().optional(),
   GEMINI_API_KEY: z.string().optional()
