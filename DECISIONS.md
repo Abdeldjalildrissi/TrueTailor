@@ -617,3 +617,52 @@ with it (3/3); full suite 126/126 across 20 files; lint, typecheck,
 `prettier --check .`, and the deferred-work scan all pass. Existing `.env`
 files with a blank `AI_MODEL=` now work without edits; fresh copies work out
 of the box.
+
+---
+
+## D-0025 · 2026-07-19 · Prompt deepening: extraction, job analysis, and tailoring rewritten for recall, semantic depth, and ATS alignment
+
+**Context.** Owner request after first real-world use: substantially improve
+the three runtime prompts — more accurate extraction, deeper reading of job
+postings, and tailoring that produces ATS-ready output — with the
+zero-fabrication guarantee untouched.
+
+**Scope discipline.** Prompts are Layer 2 of the anti-fabrication
+architecture. Layers 1 (schema-forced structured output) and 3
+(deterministic verification and export gating) are unchanged; every new
+instruction was written to be TRUE to what the verifier actually enforces,
+so better prompts cannot loosen the guarantee — only raise output quality
+within it.
+
+**Extraction** now carries a dual mandate (total fidelity AND total recall)
+with concrete craft: reassembling PDF-mangled text without altering
+characters, recognizing section-heading synonyms, keeping the document's
+language (translation is fabrication), one-bullet-one-achievement
+delimiting, promotions as separate entries per title, document-labeled
+skill categories, and correct routing of certifications/awards/education
+details.
+
+**Job analysis** now reads like a senior recruiter: requirements mined from
+responsibilities and "about you" prose (not just Requirements sections),
+atomic one-qualification-per-requirement quoting, must/nice classification
+by the posting's own signals, ATS keyword casing preserved exactly, the
+full technical-plus-nontechnical spectrum, and screening-noise exclusion.
+
+**Tailoring** now encodes the selection-is-the-lever insight: coverage-first
+bullet selection so posting keywords appear by choosing the sources that
+already contain them — explicitly NOT by vocabulary substitution (rule 4:
+if the source says "K8s", the line says "K8s"), which mirrors the
+verifier's proper-noun/number checks. Adds professional writing craft
+(action verbs, tense discipline, action→scope→outcome framing, no filler),
+summary and cover-letter structure, skillIds as the ATS keyword anchor, and
+a final self-audit instruction. The user-message now explains how to read
+each context section; all structural tags (<profile>, <requirement_coverage>,
+<ranking_hints>, <gaps_do_not_cover>, <user_preferences> ordering) are
+unchanged — they are pinned by tests.
+
+**Verified.** Full suite 126/126 (20 files); lint, typecheck,
+prettier --check ., deferred-work scan all passing. Live end-to-end with a
+real Gemini key through the new prompts (same protocol as D-0018): 2 roles
+and 4 skills imported with 0 grounding exclusions; 4 requirements extracted,
+all verbatim-grounded; honest gap detection (2 gaps); 4 generated lines, 0
+blocked — "all lines verified".
