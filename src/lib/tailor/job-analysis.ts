@@ -20,7 +20,10 @@ export const jobAnalysisSchema = z.object({
       z.object({
         text: str,
         kind: z.enum(["must", "nice"]).nullable(),
-        keywords: z.array(str).min(1).max(8)
+        // Empty is tolerated (the model sometimes returns none for soft
+        // requirements); grounding falls back to the verbatim requirement
+        // text as its own keyword rather than failing the whole analysis.
+        keywords: z.array(str).max(8)
       })
     )
     .max(40)
@@ -49,7 +52,7 @@ Extract the requirements from one job posting.
 ## Grounding rules
 
 1. Each requirement's "text" is a verbatim quote from the posting (whitespace aside). Never paraphrase or summarize — a deterministic verifier drops any quote that does not appear in the posting.
-2. Keywords are the short screening terms inside that quote, copied with the posting's exact casing: tools ("Kubernetes"), languages ("Python"), methods ("A/B testing"), credentials ("PhD", "PMP"), thresholds ("5+ years"). These are what an ATS matches on. No synonyms, no expansions, no inferred terms — if the posting says "K8s", the keyword is "K8s".
+2. Keywords are the short screening terms inside that quote, copied with the posting's exact casing: tools ("Kubernetes"), languages ("Python"), methods ("A/B testing"), credentials ("PhD", "PMP"), thresholds ("5+ years"). These are what an ATS matches on. No synonyms, no expansions, no inferred terms — if the posting says "K8s", the keyword is "K8s". Every requirement carries at least one keyword: for soft or behavioral requirements, use the qualification's core phrase verbatim ("communication skills", "attention to detail").
 3. roleTitle and company only if the posting states them verbatim; otherwise null.
 
 ## Reading the posting like a senior recruiter
@@ -136,11 +139,11 @@ export function groundJobAnalysis(
       }
     }
     if (keywords.length === 0) {
-      warnings.push({
-        value: text,
-        reason: "Requirement dropped: none of its keywords appear in the posting."
-      });
-      continue;
+      // The requirement text itself is verbatim-grounded (checked above), so
+      // it serves as its own screening keyword. Coverage matching treats the
+      // full phrase as the term to find; without profile support it surfaces
+      // as an honest gap instead of vanishing from the analysis.
+      keywords.push(text);
     }
 
     requirements.push({

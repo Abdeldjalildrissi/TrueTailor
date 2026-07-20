@@ -78,3 +78,41 @@ describe("groundJobAnalysis", () => {
     expect(grounded.requirements).toHaveLength(1);
   });
 });
+
+describe("groundJobAnalysis: keyword fallback (D-0028)", () => {
+  it("falls back to the verbatim requirement text when the model returns no keywords", () => {
+    const analysis: JobAnalysis = {
+      roleTitle: null,
+      company: null,
+      requirements: [{ text: "Kubernetes in production", kind: "must", keywords: [] }]
+    };
+    const grounded = groundJobAnalysis(analysis, JOB_TEXT, makeId);
+    expect(grounded.requirements).toHaveLength(1);
+    expect(grounded.requirements[0]?.keywords).toEqual(["Kubernetes in production"]);
+  });
+
+  it("falls back to the requirement text when no keyword grounds in the posting", () => {
+    const analysis: JobAnalysis = {
+      roleTitle: null,
+      company: null,
+      requirements: [{ text: "Strong Python skills", kind: "must", keywords: ["Golang", "Scala"] }]
+    };
+    const grounded = groundJobAnalysis(analysis, JOB_TEXT, makeId);
+    expect(grounded.requirements).toHaveLength(1);
+    expect(grounded.requirements[0]?.keywords).toEqual(["Strong Python skills"]);
+    // The fabricated keywords are still individually warned about.
+    expect(grounded.warnings.map((w) => w.value)).toEqual(
+      expect.arrayContaining(["Golang", "Scala"])
+    );
+  });
+
+  it("still drops a requirement whose text is not verbatim in the posting", () => {
+    const analysis: JobAnalysis = {
+      roleTitle: null,
+      company: null,
+      requirements: [{ text: "Must be a wizard", kind: "must", keywords: [] }]
+    };
+    const grounded = groundJobAnalysis(analysis, JOB_TEXT, makeId);
+    expect(grounded.requirements).toHaveLength(0);
+  });
+});

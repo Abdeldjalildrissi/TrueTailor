@@ -758,3 +758,49 @@ thinkingConfig present for 2.5-flash and absent for 2.5-pro. Full suite
 code: passed — and notably faster (5.3s vs 12.1s in D-0025's run) with
 thinking disabled; this run also produced one unsupported line that the
 Layer-3 verifier blocked and flagged, exactly as designed.
+
+---
+
+## D-0028 · 2026-07-19 · Schema-boundary tolerance: model omissions degrade to blocked lines, never to 502s
+
+**Symptom.** Owner-reported on a real posting after D-0027: "Gemini output
+failed schema validation: Array must contain at least 1 element(s)" — the
+whole tailor request failed with a 502 in 2.6s (during job analysis).
+
+**Root cause.** Two Zod `.min(1)` constraints treated model sloppiness as a
+request-fatal error. Gemini (especially with thinking disabled) sometimes
+returns an empty keywords array for soft requirements ("Team player with
+good communication skills") and can omit sourceIds on a line. Gemini's
+responseSchema dialect does not enforce array minimums, so the omission
+reached Zod and killed the request — even though deterministic layers
+downstream already know how to handle exactly these defects.
+
+**Principle.** Strict against fabrication, tolerant of omission. A model
+that fails to cite must produce a BLOCKED line the user can see and rewrite
+— not a dead request. Layer 3 already emits "No source citations." for
+empty sourceIds; the schema boundary was the only layer turning a
+recoverable defect into an outage.
+
+**Fix.**
+
+1. tailoredResumeSchema: sourceIds arrays now tolerate empty at the schema
+   boundary (summary and bullets). Citation-less lines flow to the verifier,
+   arrive blocked and flagged, and can never export as generated — the
+   guarantee is unchanged; availability improves. New verify test pins the
+   "No source citations." → unsupported path.
+2. jobAnalysisSchema: keywords tolerate empty; groundJobAnalysis falls back
+   to the verbatim requirement text as its own screening keyword (the text
+   is already grounding-checked). The requirement then participates in
+   coverage matching and, without profile support, surfaces as an honest
+   gap instead of vanishing. Fabricated keywords are still warned
+   individually; requirements whose text is not verbatim in the posting are
+   still dropped.
+3. Job-analysis prompt now instructs at least one keyword per requirement
+   (core phrase verbatim for soft requirements) — reducing the omission at
+   the source; the fallback covers the remainder deterministically.
+
+**Verified.** 142/142 tests (4 new: empty-keywords fallback, ungrounded-
+keywords fallback, non-verbatim requirement still dropped, empty-sourceIds
+line blocked with the exact problem string); lint/typecheck/format/scan
+green; live end-to-end with the owner's real Gemini key: passed, 0
+exclusions, 0 blocked, honest gaps intact.

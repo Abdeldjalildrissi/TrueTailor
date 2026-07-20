@@ -178,3 +178,28 @@ describe("verifyTailoredResume", () => {
     expect(bad.valid).toBe(false);
   });
 });
+
+describe("citation-less lines arrive blocked, never crash the request (D-0028)", () => {
+  it("marks a resume bullet with empty sourceIds unsupported", () => {
+    const profile = fixtureProfile();
+    const role = profile.experience[0];
+    if (!role) {
+      throw new Error("fixture requires a role");
+    }
+    const result: TailoredResume = {
+      summary: null,
+      experience: [
+        {
+          experienceId: role.id,
+          bullets: [{ text: "Did excellent work on many systems", sourceIds: [] }]
+        }
+      ],
+      skillIds: [],
+      coverLetter: null
+    };
+    const report = verifyTailoredResume(profile, result, "Globex is hiring.");
+    const claim = report.claims.find((c) => c.path === "experience[0].bullets[0]");
+    expect(claim?.status).toBe("unsupported");
+    expect(claim?.problems.join(" ")).toContain("No source citations");
+  });
+});

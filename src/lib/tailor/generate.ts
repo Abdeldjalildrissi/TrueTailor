@@ -13,10 +13,14 @@ import type { RankingResult } from "./rank";
 const id = z.string().min(1);
 
 export const tailoredResumeSchema = z.object({
+  // sourceIds tolerate empty arrays at the schema boundary: a model that
+  // fails to cite must not 502 the whole request. The deterministic verifier
+  // marks citation-less lines "No source citations." → unsupported → blocked,
+  // so tolerance here never weakens the export guarantee (D-0028).
   summary: z
     .object({
       text: z.string().min(1).max(1200),
-      sourceIds: z.array(id).min(1).max(12)
+      sourceIds: z.array(id).max(12)
     })
     .nullable(),
   experience: z
@@ -27,7 +31,7 @@ export const tailoredResumeSchema = z.object({
           .array(
             z.object({
               text: z.string().min(1).max(600),
-              sourceIds: z.array(id).min(1).max(8)
+              sourceIds: z.array(id).max(8)
             })
           )
           .max(12)
