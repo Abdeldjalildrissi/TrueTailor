@@ -103,18 +103,80 @@ describe("GeminiProvider", () => {
     await expect(provider.generateStructured(request)).rejects.toBeInstanceOf(AIProviderError);
   });
 
-  it("rejects non-JSON candidate text", async () => {
-    const { fetchImpl } = capture({
+  it("rejects non-JSON candidate text after exhausting the retry", async () => {
+    const { calls, fetchImpl } = capture({
       candidates: [{ content: { parts: [{ text: "plain prose, not json" }] } }]
     });
     const provider = new GeminiProvider("k", "m", fetchImpl);
     await expect(provider.generateStructured(request)).rejects.toThrow(/not valid JSON/);
+    expect(calls).toHaveLength(2); // one bounded retry, then a clear failure
   });
 
   it("surfaces empty candidates with the finish reason", async () => {
     const { fetchImpl } = capture({ candidates: [{ finishReason: "MAX_TOKENS" }] });
     const provider = new GeminiProvider("k", "m", fetchImpl);
     await expect(provider.generateStructured(request)).rejects.toThrow(/MAX_TOKENS/);
+  });
+
+  it("retries a truncated response once with a 4x budget and succeeds", async () => {
+    const calls: { body: { generationConfig: { maxOutputTokens: number } } }[] = [];
+    const fetchImpl: FetchLike = async (_url, init) => {
+      const body = JSON.parse(String(init?.body)) as {
+        generationConfig: { maxOutputTokens: number };
+      };
+      calls.push({ body });
+      const first = calls.length === 1;
+      const payload = first
+        ? {
+            candidates: [
+              {
+                content: { parts: [{ text: '{"greeting":"hi","cou' }] },
+                finishReason: "MAX_TOKENS"
+              }
+            ]
+          }
+        : geminiResponse({ greeting: "hi", count: 3 });
+      return new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { "content-type": "application/json" }
+      });
+    };
+    const provider = new GeminiProvider("k", "gemini-2.5-flash", fetchImpl);
+    const result = await provider.generateStructured({ ...request, maxOutputTokens: 8192 });
+
+    expect(result).toEqual({ greeting: "hi", count: 3 });
+    expect(calls).toHaveLength(2);
+    expect(calls[0]?.body.generationConfig.maxOutputTokens).toBe(8192);
+    expect(calls[1]?.body.generationConfig.maxOutputTokens).toBe(32768);
+  });
+
+  it("reports truncation clearly when even the retry is cut off", async () => {
+    const { calls, fetchImpl } = capture({
+      candidates: [{ content: { parts: [{ text: '{"greeting":' }] }, finishReason: "MAX_TOKENS" }]
+    });
+    const provider = new GeminiProvider("k", "m", fetchImpl);
+    await expect(provider.generateStructured(request)).rejects.toThrow(/truncated/);
+    expect(calls).toHaveLength(2);
+  });
+
+  it("disables thinking on 2.5 Flash models so the budget goes to the answer", async () => {
+    const { calls, fetchImpl } = capture(geminiResponse({ greeting: "hi", count: null }));
+    const provider = new GeminiProvider("k", "gemini-2.5-flash", fetchImpl);
+    await provider.generateStructured(request);
+    const body = JSON.parse(String(calls[0]?.init.body)) as {
+      generationConfig: { thinkingConfig?: { thinkingBudget: number } };
+    };
+    expect(body.generationConfig.thinkingConfig).toEqual({ thinkingBudget: 0 });
+  });
+
+  it("does not send thinkingConfig to models that cannot disable thinking", async () => {
+    const { calls, fetchImpl } = capture(geminiResponse({ greeting: "hi", count: null }));
+    const provider = new GeminiProvider("k", "gemini-2.5-pro", fetchImpl);
+    await provider.generateStructured(request);
+    const body = JSON.parse(String(calls[0]?.init.body)) as {
+      generationConfig: { thinkingConfig?: unknown };
+    };
+    expect(body.generationConfig.thinkingConfig).toBeUndefined();
   });
 
   it("surfaces HTTP failures with status", async () => {

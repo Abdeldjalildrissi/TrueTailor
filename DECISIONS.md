@@ -718,3 +718,43 @@ variants, magic-byte rejection, zip vs bare-tex packaging, auth guard);
 lint, typecheck, prettier, deferred-work scan all passing; production build
 clean; Playwright e2e 8/8 including the WCAG 2.2 AA axe audit over the
 workspace pages that now include the photo card.
+
+---
+
+## D-0027 · 2026-07-19 · Gemini truncation: thinking budget was silently eating the JSON
+
+**Symptom.** Intermittent "Gemini response was not valid JSON." on tailoring
+requests — first reproduced by the owner on a real posting with a cover
+letter requested; shorter requests (and an earlier tailoring the same
+evening) succeeded.
+
+**Root cause.** Gemini 2.5 models are thinking models whose internal
+reasoning tokens draw from the same maxOutputTokens budget as the answer.
+The provider capped output at the caller's budget (8,192 for generation,
+4,096 for job analysis) — enough for the JSON alone, but thinking consumed
+an unpredictable share first, so longer answers (cover letters) were cut
+off mid-document. JSON.parse then failed. The failure is inherently
+intermittent because thinking length varies run to run.
+
+**Fix (three deterministic layers in GeminiProvider):**
+
+1. thinkingConfig.thinkingBudget = 0 on 2.5 Flash models — these calls are
+   schema-constrained structured transformations, not open-ended reasoning,
+   so the entire budget now goes to the answer. Model-gated because 2.5 Pro
+   rejects a zero thinking budget; overrides to other models are unaffected.
+2. Truncation is now detected explicitly (finishReason MAX_TOKENS) instead
+   of surfacing as a generic JSON error.
+3. One bounded retry re-issues the request at 4× the budget (ceiling
+   65,536) when a response is truncated or unparseable; if the retry also
+   fails, the error names the real condition ("truncated at N output
+   tokens" / "not valid JSON (finish reason: …)") so future diagnosis
+   starts from facts.
+
+**Verified.** Provider unit tests 10/10 including new cases: truncated
+first attempt → 4× retry succeeds (budgets asserted 8192 → 32768), double
+truncation reports "truncated", non-JSON retries once then fails clearly,
+thinkingConfig present for 2.5-flash and absent for 2.5-pro. Full suite
+139/139. Live end-to-end with the owner's real Gemini key through the new
+code: passed — and notably faster (5.3s vs 12.1s in D-0025's run) with
+thinking disabled; this run also produced one unsupported line that the
+Layer-3 verifier blocked and flagged, exactly as designed.
