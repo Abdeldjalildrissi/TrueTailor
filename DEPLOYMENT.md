@@ -13,19 +13,20 @@ runs database migrations automatically on first connection.
 | TLS termination   | Cookies are `Secure` when `APP_URL` starts with `https://` |
 | Persistent volume | SQLite lives at `DATABASE_PATH` (default `/data/app.db`)   |
 | One app instance  | Embedded database model — see DECISIONS.md D-0004/D-0007   |
-| AI provider key   | One of Anthropic / OpenAI / Gemini for the runtime AI      |
+| AI provider key   | One of Anthropic / OpenAI / Gemini / OpenRouter            |
 
 ## Environment variables
 
-| Variable            | Required | Value                                          |
-| ------------------- | -------- | ---------------------------------------------- |
-| `APP_URL`           | yes      | Canonical base URL, e.g. `https://your-domain` |
-| `DATABASE_PATH`     | yes      | `/data/app.db` (matches the mounted volume)    |
-| `AI_PROVIDER`       | yes      | `anthropic` (default), `openai`, or `google`   |
-| `ANTHROPIC_API_KEY` | one-of   | If provider is `anthropic`                     |
-| `OPENAI_API_KEY`    | one-of   | If provider is `openai`                        |
-| `GEMINI_API_KEY`    | one-of   | If provider is `google`                        |
-| `AI_MODEL`          | no       | Optional model override                        |
+| Variable             | Required | Value                                          |
+| -------------------- | -------- | ---------------------------------------------- |
+| `APP_URL`            | yes      | Canonical base URL, e.g. `https://your-domain` |
+| `DATABASE_PATH`      | yes      | `/data/app.db` (matches the mounted volume)    |
+| `AI_PROVIDER`        | yes      | `anthropic`, `openai`, `google`, `openrouter`  |
+| `ANTHROPIC_API_KEY`  | one-of   | If provider is `anthropic`                     |
+| `OPENAI_API_KEY`     | one-of   | If provider is `openai`                        |
+| `GEMINI_API_KEY`     | one-of   | If provider is `google`                        |
+| `OPENROUTER_API_KEY` | one-of   | If provider is `openrouter`                    |
+| `AI_MODEL`           | no       | Optional model override                        |
 
 Set keys only in the platform's secret manager. Startup validation fails
 fast with a clear message on malformed configuration; a missing provider key

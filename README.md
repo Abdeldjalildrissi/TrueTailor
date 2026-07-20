@@ -33,16 +33,16 @@ generation problem over plausible fiction.
 
 ## Stack
 
-| Concern    | Choice                                                             |
-| ---------- | ------------------------------------------------------------------ |
-| Framework  | Next.js 15 (App Router), React 19, TypeScript (strict)             |
-| Styling    | Tailwind CSS v4, self-hosted Inter Variable                        |
-| Database   | SQLite (@libsql/client) + Drizzle ORM, versioned migrations        |
-| Auth       | First-party email/password, argon2id, hashed session tokens        |
-| Runtime AI | Provider-agnostic adapter — Anthropic (default), OpenAI, or Gemini |
-| Testing    | Vitest (unit/integration), Playwright + axe (e2e/a11y)             |
-| Deploy     | Docker (standalone Next build), any container host + volume        |
-| CI         | GitHub Actions: lint, typecheck, format, tests, clean scan, build  |
+| Concern    | Choice                                                                         |
+| ---------- | ------------------------------------------------------------------------------ |
+| Framework  | Next.js 15 (App Router), React 19, TypeScript (strict)                         |
+| Styling    | Tailwind CSS v4, self-hosted Inter Variable                                    |
+| Database   | SQLite (@libsql/client) + Drizzle ORM, versioned migrations                    |
+| Auth       | First-party email/password, argon2id, hashed session tokens                    |
+| Runtime AI | Provider-agnostic adapter — Anthropic (default), OpenAI, Gemini, or OpenRouter |
+| Testing    | Vitest (unit/integration), Playwright + axe (e2e/a11y)                         |
+| Deploy     | Docker (standalone Next build), any container host + volume                    |
+| CI         | GitHub Actions: lint, typecheck, format, tests, clean scan, build              |
 
 Every significant decision, with rationale, lives in [DECISIONS.md](./DECISIONS.md).
 
@@ -58,14 +58,15 @@ npm run dev            # http://localhost:3000
 
 Environment variables (see `.env.example`):
 
-| Variable            | Purpose                                                     |
-| ------------------- | ----------------------------------------------------------- |
-| `APP_URL`           | Canonical base URL; drives secure cookies and origin checks |
-| `DATABASE_PATH`     | SQLite file path (persistent volume in production)          |
-| `AI_PROVIDER`       | `anthropic`, `openai`, or `google` (Gemini)                 |
-| `ANTHROPIC_API_KEY` | Runtime AI key (only if provider is anthropic)              |
-| `OPENAI_API_KEY`    | Runtime AI key (only if provider is openai)                 |
-| `GEMINI_API_KEY`    | Runtime AI key (only if provider is google)                 |
+| Variable             | Purpose                                                     |
+| -------------------- | ----------------------------------------------------------- |
+| `APP_URL`            | Canonical base URL; drives secure cookies and origin checks |
+| `DATABASE_PATH`      | SQLite file path (persistent volume in production)          |
+| `AI_PROVIDER`        | `anthropic`, `openai`, `google` (Gemini), or `openrouter`   |
+| `ANTHROPIC_API_KEY`  | Runtime AI key (only if provider is anthropic)              |
+| `OPENAI_API_KEY`     | Runtime AI key (only if provider is openai)                 |
+| `GEMINI_API_KEY`     | Runtime AI key (only if provider is google)                 |
+| `OPENROUTER_API_KEY` | Runtime AI key (only if provider is openrouter)             |
 
 The database schema is created automatically on first run (migrations in
 `drizzle/` are applied at connection time).

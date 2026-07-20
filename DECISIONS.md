@@ -804,3 +804,39 @@ keywords fallback, non-verbatim requirement still dropped, empty-sourceIds
 line blocked with the exact problem string); lint/typecheck/format/scan
 green; live end-to-end with the owner's real Gemini key: passed, 0
 exclusions, 0 blocked, honest gaps intact.
+
+---
+
+## D-0029 · 2026-07-19 · OpenRouter as a fourth runtime provider; the pasted key rule enforced again
+
+**Context.** The owner exhausted the Gemini free-tier quota (429) and asked
+to switch to an OpenRouter key — pasting the key into the chat. Two
+responses follow from standing policy and architecture:
+
+**Security.** A credential pasted into a conversation is treated as
+compromised the moment it is sent (same rule as D-0010's pasted Google
+key): it was not used, not stored, and the owner was instructed to revoke
+it on openrouter.ai and mint a fresh one. Keys enter the system only
+through the encrypted credential store or the owner's local `.env` — never
+chat.
+
+**Feature.** TrueTailor previously spoke to Anthropic, OpenAI, and Google
+directly; OpenRouter (one key, many models, OpenAI-compatible dialect) is
+now a first-class `AI_PROVIDER=openrouter`. The OpenAI provider's request/
+validation logic moved to a shared `openai-compatible.ts` core
+(chat-completions + strict json_schema + Zod re-validation, error messages
+carrying the provider label); `OpenRouterProvider` reuses it against
+https://openrouter.ai/api/v1 with Bearer auth and app-title attribution.
+Default model: `openai/gpt-4o-mini` (inexpensive, dependable strict-schema
+support); any OpenRouter slug can be substituted via `AI_MODEL`, with the
+note that structured-output support varies by model. Config, docs
+(.env.example, README, DEPLOYMENT.md), and the provider selection error
+paths all extended.
+
+**Verified.** 146/146 tests across 23 files (4 new: endpoint/headers/strict
+schema shape, model override, labeled errors with HTTP status, Zod
+re-validation); lint, typecheck, prettier, deferred-work scan, production
+build all green. Not claimed: a live OpenRouter round-trip — the only key
+offered was chat-compromised and unusable by policy; the path is
+protocol-identical to the OpenAI provider and unit-verified, and can be
+live-verified the moment a safely stored key exists.

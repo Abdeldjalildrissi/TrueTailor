@@ -2,6 +2,7 @@ import { env } from "@/lib/env";
 import { AnthropicProvider } from "./anthropic";
 import { GeminiProvider } from "./gemini";
 import { OpenAIProvider } from "./openai";
+import { OpenRouterProvider } from "./openrouter";
 import { AIProviderError, type AIProvider } from "./types";
 
 let override: AIProvider | null = null;
@@ -32,6 +33,14 @@ export function getProvider(): AIProvider {
       );
     }
     return new GeminiProvider(config.GEMINI_API_KEY, config.AI_MODEL);
+  }
+  if (config.AI_PROVIDER === "openrouter") {
+    if (!config.OPENROUTER_API_KEY) {
+      throw new AIProviderError(
+        "The runtime AI provider is not configured: set OPENROUTER_API_KEY (or switch AI_PROVIDER)."
+      );
+    }
+    return new OpenRouterProvider(config.OPENROUTER_API_KEY, config.AI_MODEL);
   }
   if (!config.OPENAI_API_KEY) {
     throw new AIProviderError(

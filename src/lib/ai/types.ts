@@ -16,7 +16,7 @@ export interface StructuredRequest<T> {
 }
 
 export interface AIProvider {
-  readonly name: "anthropic" | "openai" | "google";
+  readonly name: "anthropic" | "openai" | "google" | "openrouter";
   generateStructured<T>(request: StructuredRequest<T>): Promise<T>;
 }
 
