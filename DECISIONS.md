@@ -699,7 +699,7 @@ resume workspace once a profile exists. The photo never passes through any
 model. With a photo, LaTeX export ships as a zip (resume.tex + the image +
 an Overleaf README) with \includegraphics wired to the real filename;
 without one, the photo block is omitted entirely and the .tex downloads
-bare — same design, no dangling placeholder.
+bare — same design, nothing left dangling.
 
 **Mapping choices (template ↔ data model).** Labeled contact slots
 (Mob/Mail/Address) render from the profile's phone/email/location; links

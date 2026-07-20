@@ -10,7 +10,7 @@ import { formatDateRange, type ExportResume } from "./assemble";
  * The photo slot is honored when a profile photo exists (the export ships
  * as a zip with the image next to the .tex); without one, the photo block
  * is omitted entirely and the left column flows up cleanly — same design,
- * no dangling placeholder.
+ * nothing left dangling.
  *
  * This renderer consumes the same gated ExportResume as every other format:
  * blocked lines have already been removed by assembleResume.
