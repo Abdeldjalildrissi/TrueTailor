@@ -94,9 +94,16 @@ The database schema is created automatically on first run (migrations in
    or rewrite it — rewrites take your authorship. Any line that fails the
    deterministic verifier arrives blocked and cannot leave the app as
    generated content.
-6. **Export.** Download the reviewed resume as Markdown, DOCX, or PDF. The
-   export gate re-verifies every line; only accepted, verified, or
-   user-authored content is written to the file.
+6. **Export.** Download the reviewed resume as Markdown, DOCX, PDF, or
+   LaTeX. The export gate re-verifies every line; only accepted, verified,
+   or user-authored content is written to the file. The LaTeX export
+   renders your resume into the reference template (two-column,
+   Times New Roman) as a ready-to-compile `.tex` — open it on
+   [Overleaf](https://overleaf.com) and click Recompile for a PDF. After
+   importing, you can optionally upload a profile photo (JPEG/PNG): with a
+   photo the LaTeX export ships as a zip containing the image wired into
+   the template's photo slot; without one, the same design renders
+   photo-free.
 7. **It learns your voice.** Your rewrites and rejections deterministically
    shape future generations — style and selection only. The verification
    rules never relax.

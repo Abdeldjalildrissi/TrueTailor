@@ -40,10 +40,20 @@ export interface ExportResume {
   fullName: string;
   headline: string | null;
   contacts: string[];
+  /** Individually labeled contact fields for templates with labeled slots. */
+  email: string | null;
+  phone: string | null;
+  location: string | null;
   links: { label: string; url: string }[];
   summary: ExportLine | null;
   experience: ExportExperience[];
   skills: string[];
+  /**
+   * The same selected skills grouped by the profile's own category labels
+   * (null category = uncategorized), in selection order. Templates with
+   * sectioned skill columns render one section per group.
+   */
+  skillGroups: { category: string | null; names: string[] }[];
   education: {
     institution: string;
     degree: string | null;
@@ -134,10 +144,18 @@ export function assembleResume(input: AssembleInput): ExportResume {
   });
 
   const skills: string[] = [];
+  const skillGroups: { category: string | null; names: string[] }[] = [];
   for (const skillId of result.skillIds) {
     const skill = skillById.get(skillId);
-    if (skill && !skills.includes(skill.name)) {
-      skills.push(skill.name);
+    if (!skill || skills.includes(skill.name)) {
+      continue;
+    }
+    skills.push(skill.name);
+    const group = skillGroups.find((g) => g.category === skill.category);
+    if (group) {
+      group.names.push(skill.name);
+    } else {
+      skillGroups.push({ category: skill.category, names: [skill.name] });
     }
   }
 
@@ -147,10 +165,14 @@ export function assembleResume(input: AssembleInput): ExportResume {
     contacts: [profile.basics.email, profile.basics.phone, profile.basics.location].filter(
       (v): v is string => Boolean(v)
     ),
+    email: profile.basics.email,
+    phone: profile.basics.phone,
+    location: profile.basics.location,
     links: profile.basics.links.map((l) => ({ label: l.label, url: l.url })),
     summary,
     experience,
     skills,
+    skillGroups,
     // Identity-level profile facts are included as verified data.
     education: profile.education.map((e) => ({
       institution: e.institution,

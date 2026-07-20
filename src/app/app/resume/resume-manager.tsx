@@ -104,18 +104,144 @@ function ImportPanel({
   );
 }
 
+/* ---------- profile photo panel ---------- */
+
+function PhotoPanel({ initialHasPhoto }: { initialHasPhoto: boolean }) {
+  const [hasPhoto, setHasPhoto] = useState(initialHasPhoto);
+  const [photoVersion, setPhotoVersion] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const inputId = useId();
+
+  async function upload(event: React.FormEvent) {
+    event.preventDefault();
+    const file = fileRef.current?.files?.[0];
+    if (!file) {
+      setError("Choose a JPEG or PNG photo first.");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const form = new FormData();
+      form.append("photo", file);
+      const res = await fetch("/api/profile/photo", { method: "POST", body: form });
+      const payload = (await res.json().catch(() => null)) as { error?: string } | null;
+      if (!res.ok) {
+        setError(payload?.error ?? "Upload failed. Please try again.");
+        return;
+      }
+      setHasPhoto(true);
+      setPhotoVersion((v) => v + 1);
+      setMessage("Photo saved. LaTeX exports will include it in the template's photo slot.");
+      if (fileRef.current) {
+        fileRef.current.value = "";
+      }
+    } catch {
+      setError("Network error during upload. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove() {
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/profile/photo", { method: "DELETE" });
+      if (!res.ok && res.status !== 404) {
+        const payload = (await res.json().catch(() => null)) as { error?: string } | null;
+        setError(payload?.error ?? "Could not remove the photo. Please try again.");
+        return;
+      }
+      setHasPhoto(false);
+      setMessage("Photo removed. Exports now use the photo-free layout — the design stays intact.");
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section aria-label="Profile photo" className="rounded-xl border border-line bg-surface p-6">
+      <h2 className="text-lg font-semibold tracking-tight">
+        Include a photo in your exported resume?
+      </h2>
+      <p className="mt-1 max-w-2xl text-sm text-ink-soft">
+        The LaTeX resume template has a photo slot. Upload one to fill it — or skip this entirely
+        and exports use the same design without a photo. You can change your mind anytime.
+      </p>
+
+      <div className="mt-4 flex flex-wrap items-start gap-6">
+        {hasPhoto ? (
+          <div className="flex flex-col items-start gap-2">
+            {/* Plain <img>: authenticated dynamic bytes, not a static asset. */}
+            <img
+              src={`/api/profile/photo?v=${photoVersion}`}
+              alt="Your current profile photo"
+              className="h-32 w-32 rounded-md border border-line object-cover"
+            />
+            <Button type="button" variant="secondary" disabled={busy} onClick={remove}>
+              Remove photo
+            </Button>
+          </div>
+        ) : null}
+
+        <form onSubmit={upload} className="flex max-w-md flex-col gap-3">
+          <label htmlFor={inputId} className="text-sm font-medium">
+            {hasPhoto ? "Replace photo" : "Photo file"}
+          </label>
+          <input
+            id={inputId}
+            ref={fileRef}
+            type="file"
+            accept="image/jpeg,image/png"
+            className="rounded-md border border-line bg-canvas px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-accent-soft file:px-3 file:py-1 file:text-sm file:font-medium"
+          />
+          <p className="text-xs text-ink-soft">JPEG or PNG, up to 2 MB.</p>
+          <div>
+            <Button type="submit" disabled={busy}>
+              {busy ? "Working…" : hasPhoto ? "Replace photo" : "Upload photo"}
+            </Button>
+          </div>
+        </form>
+      </div>
+
+      {error ? (
+        <p role="alert" className="mt-3 text-sm text-danger">
+          {error}
+        </p>
+      ) : null}
+      <p
+        role="status"
+        aria-live="polite"
+        className={message ? "mt-3 text-sm text-ink-soft" : "sr-only"}
+      >
+        {message ?? ""}
+      </p>
+    </section>
+  );
+}
+
 /* ---------- main manager ---------- */
 
 interface ResumeManagerProps {
   initialProfile: Profile | null;
   initialWarnings: GroundingWarning[];
   initialVersion: number;
+  initialHasPhoto: boolean;
 }
 
 export function ResumeManager({
   initialProfile,
   initialWarnings,
-  initialVersion
+  initialVersion,
+  initialHasPhoto
 }: ResumeManagerProps) {
   const [profile, setProfile] = useState<Profile | null>(initialProfile);
   const [warnings, setWarnings] = useState<GroundingWarning[]>(initialWarnings);
@@ -263,6 +389,7 @@ export function ResumeManager({
         <ImportPanel emphasized busy={busy} onImport={importResume} />
       ) : (
         <>
+          <PhotoPanel initialHasPhoto={initialHasPhoto} />
           <BasicsEditor profile={profile} busy={busy} onSave={saveProfile} />
           <SummaryEditor profile={profile} busy={busy} onSave={saveProfile} />
           <ExperienceEditor profile={profile} busy={busy} onSave={saveProfile} />

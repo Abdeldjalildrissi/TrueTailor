@@ -209,6 +209,7 @@ export function ReviewWorkspace({
             {exportButton("pdf", "PDF", "resume")}
             {exportButton("docx", "DOCX", "resume")}
             {exportButton("markdown", "Markdown", "resume")}
+            {exportButton("latex", "LaTeX", "resume")}
             {hasCover ? exportButton("pdf", "Cover letter PDF", "cover") : null}
             {hasCover ? exportButton("docx", "Cover letter DOCX", "cover") : null}
           </div>

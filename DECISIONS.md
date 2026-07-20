@@ -666,3 +666,55 @@ real Gemini key through the new prompts (same protocol as D-0018): 2 roles
 and 4 skills imported with 0 grounding exclusions; 4 requirements extracted,
 all verbatim-grounded; honest gap detection (2 gaps); 4 generated lines, 0
 blocked — "all lines verified".
+
+---
+
+## D-0026 · 2026-07-19 · Owner LaTeX template as an export format, with an optional profile photo flow
+
+**Context.** Owner request: adopt their reference LaTeX resume template
+(two-column paracol layout, Times New Roman via mathptmx, slate #2B3E50
+section headers with rules, 32/63 column split) as the default template for
+generated resumes, honoring its photo slot — asking the user after import
+whether to include a photo, and degrading to a clean photo-free layout when
+declined.
+
+**Decision — LaTeX as a fourth export format, not a replacement.** The
+tailored resume can now be exported as LaTeX alongside Markdown/DOCX/PDF.
+The renderer (src/lib/export/latex.ts) preserves the reference template's
+skeleton verbatim — packages, colors, column ratios, section styling — and
+injects only data, with every injected string LaTeX-escaped
+(escapeLatex covers all ten specials, tested). It consumes the same gated
+ExportResume as every other format, so verifier-blocked lines can never
+appear in a .tex. Because this environment has no TeX distribution, compile
+verification is not claimed here: the skeleton is copied character-for-
+character from the owner's compiling reference, and structural fidelity is
+test-asserted instead.
+
+**Decision — photo as identity data, never AI data.** New profile_photos
+table (migration 0004, one row per user, bytes in the embedded database per
+D-0004), API at /api/profile/photo (upload/preview/delete; 2 MB cap;
+magic-byte sniffing so a mislabeled file is rejected regardless of its
+claimed content type; JPEG/PNG only), and a "photo?" card at the top of the
+resume workspace once a profile exists. The photo never passes through any
+model. With a photo, LaTeX export ships as a zip (resume.tex + the image +
+an Overleaf README) with \includegraphics wired to the real filename;
+without one, the photo block is omitted entirely and the .tex downloads
+bare — same design, no dangling placeholder.
+
+**Mapping choices (template ↔ data model).** Labeled contact slots
+(Mob/Mail/Address) render from the profile's phone/email/location; links
+render as labeled lines. Left-column skill sections are generated from the
+profile's own skill categories (one template-styled section per category,
+"Skills" when uncategorized) — assembleResume now also exposes labeled
+contact fields and category-grouped skillGroups (additive; other exporters
+untouched). Sections with no data are omitted whole. The template's Hobbies
+section has no counterpart in the verified data model and is not fabricated.
+The header renders headline + name from the profile only — a target-role
+title is never written into the candidate's identity.
+
+**Verified.** 134/134 tests across 22 files (8 new: escaping, template
+fidelity, blocked-line gate, user-rewrite authorship, photo/no-photo
+variants, magic-byte rejection, zip vs bare-tex packaging, auth guard);
+lint, typecheck, prettier, deferred-work scan all passing; production build
+clean; Playwright e2e 8/8 including the WCAG 2.2 AA axe audit over the
+workspace pages that now include the photo card.

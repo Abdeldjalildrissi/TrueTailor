@@ -109,6 +109,21 @@ export const tailoringDecisions = sqliteTable(
   ]
 );
 
+/**
+ * Optional profile photo, one per user. Used only by exports whose template
+ * has a photo placement (the LaTeX template); when absent, those exports
+ * render the photo-free variant. Stored as bytes in the embedded database,
+ * consistent with resume_documents (D-0004 single-store posture).
+ */
+export const profilePhotos = sqliteTable("profile_photos", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  mime: text("mime", { enum: ["image/jpeg", "image/png"] }).notNull(),
+  bytes: blob("bytes", { mode: "buffer" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull()
+});
+
 export const sessions = sqliteTable(
   "sessions",
   {
